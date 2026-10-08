@@ -37,6 +37,8 @@
   var TIMEPRIS = 650, LOENANDEL = 0.38;
   // Biomkostninger: [navn, [lav, mid, høj], kun for typer, skøn?]
   var BI = [
+    ["Arkitekt (skitse- og myndighedsprojekt)", [70000, 84000, 100000], ["villa", "sommerhus", "anneks", "tilbygning"], 0, { tilbygning: 71000, anneks: 71000, sommerhus: 84000, villa: 96000 }],
+    ["Bygningskonstruktør (projektering og byggestyring)", [80000, 100000, 120000], ["villa", "sommerhus", "anneks", "tilbygning"], 1, "areal"],
     ["Landinspektør (afsætning af skel)", [6000, 11000, 16000], ["villa", "sommerhus", "anneks"], 0],
     ["Geoteknisk undersøgelse", [8000, 12000, 20000], ["villa", "sommerhus", "anneks", "tilbygning"], 1],
     ["Byggetilladelse (kommunens gebyr)", [1000, 7000, 23000], ["villa", "sommerhus", "anneks", "tilbygning"], 0],
@@ -46,8 +48,7 @@
     ["Energimærkning", [7200, 8000, 8800], ["villa", "sommerhus"], 0]
   ];
   var BI_PCT = [
-    ["Arkitekt (projektering og byggestyring)", [0.05, 0.08, 0.10], ["villa", "sommerhus", "anneks", "tilbygning"], 0],
-    ["Ingeniør / konstruktør", [0.01, 0.015, 0.025], ["villa", "sommerhus", "tilbygning"], 1],
+    ["Ingeniør", [0.01, 0.015, 0.025], ["villa", "sommerhus", "tilbygning"], 1],
     ["Byggeskadeforsikring", [0.01, 0.015, 0.03], ["villa"], 0]
   ];
 
@@ -107,7 +108,7 @@
     var lo = kern * (1 - w), hi = kern * (1 + w);
     // biomkostninger
     var bi = [], bLo = 0, bMid = 0, bHi = 0;
-    BI.forEach(function (b) { if (b[2].indexOf(s.type) < 0) return; bi.push([b[0], b[1][1], b[3]]); bLo += b[1][0]; bMid += b[1][1]; bHi += b[1][2]; });
+    BI.forEach(function (b) { if (b[2].indexOf(s.type) < 0) return; var f = 1, m; if (b[4] === "areal") f = Math.max(0.4, Math.min(1, 0.4 + 0.6 * (A - 40) / 60)); m = (b[4] && b[4][s.type]) || b[1][1] * f; bi.push([b[0], m, b[3]]); bLo += b[1][0] * f; bMid += m; bHi += b[1][2] * f; });
     BI_PCT.forEach(function (b) { if (b[2].indexOf(s.type) < 0) return; bi.push([b[0], kern * b[1][1], b[3]]); bLo += kern * b[1][0]; bMid += kern * b[1][1]; bHi += kern * b[1][2]; });
     var uLo = lo * T.uforudsete[0], uHi = hi * T.uforudsete[2];
     var total = [lo + bLo + uLo, kern + bMid + uf, hi + bHi + uHi];
