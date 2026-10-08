@@ -142,7 +142,7 @@
   function byg() {
     root.innerHTML = "";
     var g = el("div", "g"), left = el("div"), right = el("div", "r");
-    var h = el("div"); h.appendChild(el("h3", null, "Hvad kommer det til at koste?"));
+    var h = el("div"); 
     h.appendChild(el("p", "t", "Vælg det, du ved, og lad resten stå. Det du ikke vælger, regnes som et gennemsnit. Jo flere valg, jo mere præcist overslag."));
     root.appendChild(h);
     var sw = el("div", "sw");
