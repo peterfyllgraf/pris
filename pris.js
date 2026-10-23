@@ -6,10 +6,10 @@
   var REF = { kvartal: "2026K2", indeks: 124.9, dato: "oktober 2026" };
   // Grundpris pr. m² uden køkken, bad, varmeanlæg og ventilation. [lav, mid, høj]
   var TYPER = {
-    villa:      { navn: "Villa / nybyg",  pris: [12000, 14500, 21000], uforudsete: [0.05, 0.075, 0.10], kb: { koekken: 1, bad: 2 } },
-    sommerhus:  { navn: "Sommerhus",      pris: [10000, 12500, 19000], uforudsete: [0.15, 0.175, 0.20], kb: { koekken: 1, bad: 1 } },
-    anneks:     { navn: "Anneks",         pris: [7000, 11000, 17000],  uforudsete: [0.08, 0.10, 0.12],  kb: { koekken: 0, bad: 0 } },
-    tilbygning: { navn: "Tilbygning",     pris: [15000, 20000, 28000], uforudsete: [0.10, 0.125, 0.15], kb: { koekken: 0, bad: 0 } }
+    villa:      { navn: "Villa / nybyg",  pris: [14000, 16500, 25000], uforudsete: [0.05, 0.075, 0.10], kb: { koekken: 1, bad: 2 } },
+    sommerhus:  { navn: "Sommerhus",      pris: [12500, 15000, 22000], uforudsete: [0.15, 0.175, 0.20], kb: { koekken: 1, bad: 1 } },
+    anneks:     { navn: "Anneks",         pris: [8500, 12000, 18500],  uforudsete: [0.08, 0.10, 0.12],  kb: { koekken: 0, bad: 0 } },
+    tilbygning: { navn: "Tilbygning",     pris: [18000, 25000, 32000], uforudsete: [0.10, 0.125, 0.15], kb: { koekken: 0, bad: 0 } }
   };
   // Komponenter: andel af byggesum og relative priser (r) pr. valg. s = skøn uden kilde.
   var KOMP = [
@@ -19,7 +19,7 @@
       ["Rammekonstruktion / træskelet", 0.95], ["Stolpekonstruktion", 0.92], ["Teglblokke / letklinker", 1.12],
       ["Gasbeton / letbeton (bærende)", 1.02, 1], ["Massivtræ (KL-træ)", 1.25, 1] ] },
     { id: "fac", navn: "Facade", andel: 0.07, hurtig: true, valg: [
-      ["Listebeklædning", 750], ["Træbeklædning", 1000], ["Puds", 600], ["Fibercement", 1900],
+      ["Listebeklædning", 750], ["Træbeklædning", 1000], ["Puds", 1100], ["Fibercement", 1900],
       ["Metal (stål / zink)", 1500, 1], ["Mursten", 2150] ] },
     { id: "iso", navn: "Isolering", andel: 0.04, hurtig: true, valg: [
       ["Mineraluld (fx Rockwool)", 1.0], ["Papiruld", 0.95], ["Træfiber", 1.25], ["Ålegræs", 1.9, 1], ["Halm", 1.4, 1], ["PIR / EPS", 1.2, 1] ] },
@@ -46,12 +46,13 @@
   var RIYD = [["Udvendigt (med ny facade)", 1500], ["Indvendigt", 1200, 1]];
   var RP = { lk: 2300, tt: 8000, trappe: 60000, kvist: 65000, ovn: 16000, bv: 14000, igul: 550, vin: 6500 };
   var RUF = [0.12, 0.18, 0.25], RLOEN = 0.45;
-  var TERRASSE = [["Træterrasse, fyr", 1000], ["Træterrasse, lærk", 1250], ["Træterrasse, hårdttræ", 1600, 1], ["Komposit", 1100], ["Fliser", 600]];
+  var TERRASSE = [["Træterrasse, fyr", 1900], ["Træterrasse, lærk", 2400], ["Træterrasse, hårdttræ", 3000, 1], ["Komposit", 2100], ["Fliser", 1150]];
   var TIMEPRIS = 650, LOENANDEL = 0.38;
   // Biomkostninger: [navn, [lav, mid, høj], kun for typer, skøn?]
   var BI = [
     ["Arkitekt (skitse- og myndighedsprojekt)", [70000, 84000, 100000], ["villa", "sommerhus", "anneks", "tilbygning"], 0, { tilbygning: 71000, anneks: 71000, sommerhus: 84000, villa: 96000 }],
     ["Bygningskonstruktør (projektering og byggestyring)", [80000, 100000, 120000], ["villa", "sommerhus", "anneks", "tilbygning"], 1, "areal"],
+    ["Bygningsregistrering og kontrolmåling (eksisterende hus)", [5000, 7500, 10000], ["tilbygning"], 0],
     ["Landinspektør (afsætning af skel)", [6000, 11000, 16000], ["villa", "sommerhus", "anneks"], 0],
     ["Geoteknisk undersøgelse", [8000, 12000, 20000], ["villa", "sommerhus", "anneks", "tilbygning"], 1],
     ["Byggetilladelse (kommunens gebyr)", [1000, 7000, 23000], ["villa", "sommerhus", "anneks", "tilbygning"], 0],
@@ -62,7 +63,7 @@
     ["Energimærkning", [7200, 8000, 8800], ["villa", "sommerhus"], 0]
   ];
   var BI_PCT = [
-    ["Ingeniør", [0.01, 0.015, 0.025], ["villa", "sommerhus", "tilbygning"], 1],
+    ["Ingeniør", [0.01, 0.015, 0.025], ["villa", "sommerhus", "tilbygning"], 1, [20000, 30000, 40000]],
     ["Byggeskadeforsikring", [0.01, 0.015, 0.03], ["villa"], 0]
   ];
 
@@ -126,7 +127,7 @@
     BI.forEach(function (b) { if (b[2].indexOf(s.type) < 0) return; var f = 1, m; if (b[4] === "areal") f = Math.max(0.4, Math.min(1, 0.4 + 0.6 * (A - 40) / 60)); m = (b[4] && b[4][s.type]) || b[1][1] * f; bi.push([b[0], m, b[3]]); bLo += b[1][0] * f; bMid += m; bHi += b[1][2] * f; });
     if (s.type === "sommerhus") ETAB.forEach(function (e) { var i = s[e.id] === "" || s[e.id] == null ? e.std : +s[e.id], o = e.valg[i], gaet = s[e.id] === "" || s[e.id] == null; bi.push([e.navn + ": " + o[0] + (gaet ? " (antaget)" : ""), o[1][1], o[2] || gaet]); bLo += o[1][0]; bMid += o[1][1]; bHi += o[1][2]; });
     if (s.type === "villa" || s.type === "sommerhus" || s.lca) { bi.push([LCA[0], LCA[1][1], LCA[2]]); bLo += LCA[1][0]; bMid += LCA[1][1]; bHi += LCA[1][2]; }
-    BI_PCT.forEach(function (b) { if (b[2].indexOf(s.type) < 0) return; bi.push([b[0], kern * b[1][1], b[3]]); bLo += kern * b[1][0]; bMid += kern * b[1][1]; bHi += kern * b[1][2]; });
+    BI_PCT.forEach(function (b) { if (b[2].indexOf(s.type) < 0) return; var q = [kern * b[1][0], kern * b[1][1], kern * b[1][2]]; if (b[4]) q = q.map(function (x, i) { return Math.max(x, b[4][i]); }); bi.push([b[0], q[1], b[3]]); bLo += q[0]; bMid += q[1]; bHi += q[2]; });
     var uLo = lo * T.uforudsete[0], uHi = hi * T.uforudsete[2];
     var total = [lo + bLo + uLo, kern + bMid + uf, hi + bHi + uHi];
     var timer = LOENANDEL * kern / TIMEPRIS;
@@ -263,8 +264,17 @@
     }
     }
     g.appendChild(left); out = right; g.appendChild(right); root.appendChild(g);
-    var d = el("p", "d", "* Skøn uden fast kilde, som gør spændet bredere. Priser pr. " + REF.kvartal + " inkl. moms, ekskl. grund, og reguleres efter Danmarks Statistiks byggeomkostningsindeks, når den kan hentes. Kilder: bl.a. Bolius, Molio, Danmarks Statistik og branchens prisguider. Overslaget er vejledende og afløser ikke tilbud fra entreprenører. Det er ikke et tilbud.");
+    var d = el("p", "d", "* Skøn uden fast kilde, som gør spændet bredere. Priser pr. " + REF.kvartal + " inkl. moms, ekskl. grund, og reguleres efter Danmarks Statistiks byggeomkostningsindeks, når den kan hentes. Kilder: bl.a. Bolius, Molio, Danmarks Statistik og branchens prisguider. Priserne tager udgangspunkt i Sjælland og hovedstadsområdet og kan være lavere i andre dele af landet. Overslaget er vejledende og afløser ikke tilbud fra entreprenører. Det er ikke et tilbud.");
     root.appendChild(d);
+    var m = el("div", null);
+    m.id = "saadan-er-overslaget-lavet";
+    m.style.cssText = "margin-top:40px;max-width:720px";
+    m.innerHTML = "<h4 style='font-weight:700 !important;margin:0 0 10px'>Sådan er overslaget lavet</h4>" +
+      "<p style='margin:0 0 10px;line-height:1.5'>Beregneren bruger en byggepris i kr. pr. m² for hver type byggeri og justerer for størrelse og dine valg. Det du ikke vælger, regnes som et gennemsnit. Priserne er inkl. moms og uden grund.</p>" +
+      "<p style='margin:0 0 10px;line-height:1.5'>Grundlaget er referenceprojekter og priser fra entreprenører samt Molio Prisdata. Priserne reguleres efter Danmarks Statistiks byggeomkostningsindeks. Renoveringspriser er mere usikre og er markeret som skøn.</p>" +
+      "<p style='margin:0 0 10px;line-height:1.5'>Intervallet er bredt, fordi et overslag før tegninger altid er det. Priserne tager udgangspunkt i byggeri på Sjælland og i hovedstadsområdet og kan være anderledes andre steder i landet.</p>" +
+      "<p style='margin:0;line-height:1.5'>Sidst opdateret: " + REF.dato + ".</p>";
+    root.appendChild(m);
   }
   function update() {
     var reno = S.mode === "reno", R = reno ? beregnReno(S) : beregn(S), rows = "", bi = "";
