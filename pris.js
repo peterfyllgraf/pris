@@ -67,6 +67,11 @@
     ["Byggeskadeforsikring", [0.01, 0.015, 0.03], ["villa"], 0]
   ];
 
+  // Valgfrie poster på små projekter (tilbygning og anneks)
+  var VALGFRI = ["Geoteknisk undersøgelse", "Byggesagkyndig (ca. 15 timer)", "Advokat (kontraktgennemgang)", "Bygningsregistrering og kontrolmåling (eksisterende hus)"];
+  var valgChk = null;
+  var valgfriMed = function (s) { return s.valgfri === "" || s.valgfri == null ? s.areal >= 40 : !!s.valgfri; };
+
   /* ---------- HJÆLPERE ---------- */
   var fmt = function (n) { return Math.round(n / 1000) * 1000; };
   var kr = function (n) { return fmt(n).toLocaleString("da-DK") + " kr."; };
@@ -124,7 +129,7 @@
     var lo = kern * (1 - w), hi = kern * (1 + w);
     // biomkostninger
     var bi = [], bLo = 0, bMid = 0, bHi = 0;
-    BI.forEach(function (b) { if (b[2].indexOf(s.type) < 0) return; var f = 1, m; if (b[4] === "areal") f = Math.max(0.4, Math.min(1, 0.4 + 0.6 * (A - 40) / 60)); m = (b[4] && b[4][s.type]) || b[1][1] * f; bi.push([b[0], m, b[3]]); bLo += b[1][0] * f; bMid += m; bHi += b[1][2] * f; });
+    BI.forEach(function (b) { if (b[2].indexOf(s.type) < 0) return; if ((s.type === "tilbygning" || s.type === "anneks") && VALGFRI.indexOf(b[0]) >= 0 && !valgfriMed(s)) return; var f = 1, m; if (b[4] === "areal") f = Math.max(0.4, Math.min(1, 0.4 + 0.6 * (A - 40) / 60)); m = (b[4] && b[4][s.type]) || b[1][1] * f; bi.push([b[0], m, b[3]]); bLo += b[1][0] * f; bMid += m; bHi += b[1][2] * f; });
     if (s.type === "sommerhus") ETAB.forEach(function (e) { var i = s[e.id] === "" || s[e.id] == null ? e.std : +s[e.id], o = e.valg[i], gaet = s[e.id] === "" || s[e.id] == null; bi.push([e.navn + ": " + o[0] + (gaet ? " (antaget)" : ""), o[1][1], o[2] || gaet]); bLo += o[1][0]; bMid += o[1][1]; bHi += o[1][2]; });
     if (s.type === "villa" || s.type === "sommerhus" || s.lca) { bi.push([LCA[0], LCA[1][1], LCA[2]]); bLo += LCA[1][0]; bMid += LCA[1][1]; bHi += LCA[1][2]; }
     BI_PCT.forEach(function (b) { if (b[2].indexOf(s.type) < 0) return; var q = [kern * b[1][0], kern * b[1][1], kern * b[1][2]]; if (b[4]) q = q.map(function (x, i) { return Math.max(x, b[4][i]); }); bi.push([b[0], q[1], b[3]]); bLo += q[0]; bMid += q[1]; bHi += q[2]; });
@@ -171,7 +176,7 @@
 
   /* ---------- UI ---------- */
   var CSS = ".pa{--a:#1a1b1f;--g:#6b6e75;--l:#e3e3e5;--top:70px;width:100%;max-width:1000px;margin:0 auto;font-family:inherit;color:#1a1b1f;font-size:13px;line-height:20px;box-sizing:border-box}.pa *{box-sizing:border-box;font-family:inherit}.pa h3{margin:0 0 8px;font-size:18px;line-height:22px;font-weight:700}.pa .t{color:var(--a);margin:0 0 28px;max-width:560px}.pa .g{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:48px;align-items:start}.pa .k{padding:22px 0 14px;border-top:1px solid #1a1b1f}.pa .k h4{margin:0 0 6px;font-size:14px;line-height:20px;font-weight:700!important}.pa label{display:block;font-weight:400;font-size:11px;line-height:16px;letter-spacing:.02em;margin:16px 0 6px}.pa label small{display:block;color:var(--g);font-size:11px}.pa input,.pa select{width:100%;height:48px;padding:0 16px;border:1px solid #d6d6d9;border-radius:0;font-size:12px;background:#fff;color:inherit;-webkit-appearance:none;appearance:none;margin:0}.pa select{background-image:linear-gradient(45deg,transparent 50%,#1a1b1f 50%),linear-gradient(135deg,#1a1b1f 50%,transparent 50%);background-position:calc(100% - 20px) 50%,calc(100% - 15px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:36px}.pa input::placeholder{color:#a4a6ab}.pa input:focus,.pa select:focus{border-color:#1a1b1f;outline:0}.pa input[type=range]{height:28px;padding:0;accent-color:#1a1b1f;border:0;margin-top:10px;-webkit-appearance:auto;appearance:auto;background:none}.pa input[type=checkbox]{width:18px;height:18px;margin:0 10px 0 0;accent-color:#1a1b1f;-webkit-appearance:auto;appearance:auto}.pa .cb{display:flex;align-items:center;font-size:12px;letter-spacing:0;margin-top:16px;min-height:44px}.pa .sw{display:flex;margin-bottom:24px}.pa .sw button{flex:1;min-height:48px;border:1px solid #1a1b1f;background:#fff;color:#1a1b1f;border-radius:0;font-weight:700!important;cursor:pointer;font-size:12px}.pa .sw button+button{border-left:0}.pa .sw button.on{background:#1a1b1f;color:#fff}.pa .ty{display:grid;grid-template-columns:1fr 1fr;gap:8px}.pa .ty button{min-height:48px;border:1px solid #d6d6d9;background:#fff;border-radius:0;cursor:pointer;font-size:12px;color:inherit}.pa .ty button.on{border-color:#1a1b1f;background:#1a1b1f;color:#fff}.pa .r{position:sticky;top:var(--top);background:#fff;border:1px solid var(--l);padding:32px;scroll-margin-top:var(--top)}.pa .big{font-size:24px;line-height:30px;font-weight:700}.pa .m{color:var(--g);font-size:12px}.pa table{width:100%;border-collapse:collapse;margin:10px 0}.pa td{padding:6px 0;border-bottom:1px solid var(--l);vertical-align:top;font-size:12px}.pa td:last-child{text-align:right;white-space:nowrap;padding-left:12px}.pa .gn td:first-child{color:var(--g)}.pa h5{margin:22px 0 2px;font-size:13px;font-weight:700}.pa .cta{display:block;width:100%;margin:22px 0 0;padding:16px 20px;background:#1a1b1f;color:#fff;text-align:center;text-decoration:none;font-weight:700;font-size:12px;letter-spacing:.06em;border:1px solid #1a1b1f}.pa .cta:hover{background:#fff;color:#1a1b1f}.pa .bt{display:inline-block;margin:10px 0 0;padding:9px 15px;background:#fff;color:#1a1b1f;border:1px solid #1a1b1f;border-radius:0;font-weight:700;font-size:12px;cursor:pointer}.pa .bt:hover{background:#1a1b1f;color:#fff}.pa .d{margin-top:28px;font-size:11px;line-height:16px;color:var(--g);max-width:720px}.pa .hv{margin-top:36px;border-top:1px solid var(--l);border-bottom:1px solid var(--l);max-width:none}.pa .hv summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:18px 0;font-size:15px;line-height:20px;font-weight:700!important}.pa .hv summary::-webkit-details-marker{display:none}.pa .hv .pl{width:12px;height:12px;position:relative;flex:none}.pa .hv .pl:before,.pa .hv .pl:after{content:'';position:absolute;left:0;top:5px;width:12px;height:1px;background:#1a1b1f}.pa .hv .pl:after{transform:rotate(90deg);transition:transform .2s}.pa .hv[open] .pl:after{transform:rotate(0)}.pa .hvb{padding:0 0 12px;max-width:720px}.pa .hvb p{margin:0 0 10px;font-size:14px;line-height:21px}.pa .mini{display:none}.pa :focus-visible{outline:2px solid #1a1b1f;outline-offset:2px}@media(max-width:991px){.pa .g{grid-template-columns:minmax(0,1fr);gap:28px}.pa .r{position:static;padding:22px}.pa .mini{display:flex;justify-content:space-between;align-items:center;gap:12px;position:sticky;top:var(--top);z-index:5;background:#1a1b1f;color:#fff;padding:12px 16px;margin:0 -2px 18px}.pa .mini b{font-size:15px;font-weight:700!important}.pa .mini a{color:#fff;font-size:12px;white-space:nowrap}}@media(max-width:767px){.pa{padding-left:24px;padding-right:24px}.pa .mini{margin:0 -24px 18px;padding:12px 24px}.pa input,.pa select{font-size:16px}.pa .big{font-size:21px;line-height:27px}.pa td{font-size:12px}}";
-  var S = { type: "villa", areal: 140, vin: "", glas: 0, koekken: "", bad: "", varme: "", vent: "", gulvvarme: false, solkwp: 0, terr: "", terrm2: 0, overdaek: false, detalje: false, mode: "hurtig", braende: false, lca: false, evand: "", espild: "", rlk: 0, rtt: 0, rtrappe: false, rkv: 0, rovn: 0, rtagm2: 0, rtagtype: "", rbv: 0, rvin: 0, iplan: 0, iloft: false, iloftt: "", iyd: false, iydt: "", igul: false, rkoek: "", rbad: 0, rvarme: "" };
+  var S = { type: "villa", areal: 140, vin: "", glas: 0, koekken: "", bad: "", varme: "", vent: "", gulvvarme: false, solkwp: 0, terr: "", terrm2: 0, overdaek: false, detalje: false, mode: "hurtig", braende: false, lca: false, valgfri: "", evand: "", espild: "", rlk: 0, rtt: 0, rtrappe: false, rkv: 0, rovn: 0, rtagm2: 0, rtagtype: "", rbv: 0, rvin: 0, iplan: 0, iloft: false, iloftt: "", iyd: false, iydt: "", igul: false, rkoek: "", rbad: 0, rvarme: "" };
   KOMP.forEach(function (k) { S[k.id] = ""; });
   var root, out, mini;
 
@@ -233,6 +238,12 @@
     var r = el("input"); r.type = "range"; r.min = 20; r.max = 400; r.value = S.areal; r.setAttribute("aria-label", "Areal"); r.oninput = function () { S.areal = +r.value; k1.querySelector("input[inputmode]").value = r.value; update(); };
     k1.appendChild(r);
     if (S.type === "tilbygning" || S.type === "anneks") k1.appendChild(chk("Medregn LCA-beregning (krav ved nybyg og sommerhuse, tilbygninger kun over 250 m²)", "lca"));
+    if (S.type === "tilbygning" || S.type === "anneks") {
+      var vl = el("label", "cb"); valgChk = el("input"); valgChk.type = "checkbox"; valgChk.checked = valgfriMed(S);
+      valgChk.onchange = function () { S.valgfri = valgChk.checked; update(); };
+      vl.appendChild(valgChk); vl.appendChild(document.createTextNode("Medregn valgfrie poster (geoteknik" + (S.type === "tilbygning" ? ", byggesagkyndig, advokat og bygningsregistrering" : "") + "). Slået til som standard fra 40 m²"));
+      k1.appendChild(vl);
+    } else valgChk = null;
     left.appendChild(k1);
     var k2 = el("div", "k"); k2.appendChild(el("h4", null, "Huset"));
     KOMP.forEach(function (k) { if (k.hurtig || S.detalje) k2.appendChild(sel(k.navn, k.id, k.valg)); });
@@ -278,6 +289,7 @@
     aaben(); window.addEventListener("hashchange", aaben);
   }
   function update() {
+    if (valgChk && S.valgfri === "") valgChk.checked = valgfriMed(S);
     var reno = S.mode === "reno", R = reno ? beregnReno(S) : beregn(S), rows = "", bi = "";
     if (R.tomt) { out.innerHTML = "<div class='big'>Vælg et indgreb</div><div class='m' style='margin-top:8px'>Skriv fx antal m² loft til kip, meter bærende væg eller antal ovenlysvinduer, så regner jeg et overslag ud.</div>"; mini.innerHTML = "<b>Vælg et indgreb</b><a href='#pris-resultat'>↓</a>"; out.id = "pris-resultat"; return; }
     R.poster.forEach(function (p) { rows += "<tr class='" + (p[2] ? "" : "gn") + "'><td>" + p[0] + "</td><td>" + kr(p[1]) + "</td></tr>"; });
